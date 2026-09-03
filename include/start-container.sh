@@ -15,6 +15,11 @@ cleanup() {
     exit $?
 }
 
+verify_container_env() {
+    /opt/vespa/bin/verify-container-env
+    [ $? -eq 0 ] || exit 1
+}
+
 if [ -n "$1" ]; then
     if [ -z "$VESPA_CONFIGSERVERS" ]; then
         echo "VESPA_CONFIGSERVERS must be set with '-e VESPA_CONFIGSERVERS=<comma separated list of config servers>' argument to docker."
@@ -37,6 +42,7 @@ if [ -n "$1" ]; then
                 /opt/vespa/bin/vespa-stop-services
                 exit $?
             }
+            verify_container_env
             /opt/vespa/bin/vespa-start-configserver
             /opt/vespa/bin/vespa-start-services
             ;;
@@ -49,6 +55,9 @@ else
     if [ -z "$VESPA_CONFIGSERVERS" ]; then
         export VESPA_CONFIGSERVERS=$(hostname)
     fi
+    
+    verify_container_env
+
     /opt/vespa/bin/vespa-start-configserver
     /opt/vespa/bin/vespa-start-services
 fi

@@ -2,42 +2,30 @@
 
 ARG VESPA_BASE_IMAGE=el8
 
-FROM docker.io/almalinux:8 as el8
+FROM docker.io/almalinux:8 AS el8
 
 RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf && \
+    echo "fastestmirror=0"         >> /etc/dnf/dnf.conf && \
     dnf -y install \
       dnf-plugins-core \
       epel-release && \
-    dnf config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-8/group_vespa-vespa-epel-8.repo && \
-    dnf config-manager --enable powertools && \
+    dnf -y config-manager --add-repo https://github.com/vespa-engine/vespa/raw/master/dist/vespa-engine.repo && \
+    /usr/bin/crb enable && \
     dnf remove -y dnf-plugins-core && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
 LABEL org.opencontainers.image.base.name="docker.io/almalinux:8"
 
-FROM quay.io/centos/centos:stream8 as stream8
+FROM docker.io/almalinux:9 AS el9
 
 RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf && \
+    echo "fastestmirror=0"         >> /etc/dnf/dnf.conf && \
     dnf -y install \
       dnf-plugins-core \
       epel-release && \
-    dnf config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-8/group_vespa-vespa-epel-8.repo && \
-    dnf config-manager --enable powertools && \
-    dnf remove -y dnf-plugins-core && \
-    dnf clean all && \
-    rm -rf /var/cache/dnf
-
-LABEL org.opencontainers.image.base.name="quay.io/centos/centos:stream8"
-
-FROM docker.io/almalinux:9 as el9
-
-RUN echo "install_weak_deps=False" >> /etc/dnf/dnf.conf && \
-    dnf -y install \
-      dnf-plugins-core \
-      epel-release && \
-    dnf config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-9/group_vespa-vespa-epel-9.repo && \
-    dnf config-manager --enable crb && \
+    dnf -y config-manager --add-repo https://github.com/vespa-engine/vespa/raw/master/dist/vespa-engine.repo && \
+    /usr/bin/crb enable && \
     dnf remove -y dnf-plugins-core && \
     dnf clean all && \
     rm -rf /var/cache/dnf

@@ -1,0 +1,55 @@
+name: Mend CLI Scan
+
+on:
+  workflow_dispatch:
+  # pull_request:
+  #   branches: [master]
+  # push:
+  #   branches: [master]
+
+jobs:
+  mend:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - 'docker.io/vespaengine/vespa:8'
+          - 'docker.io/vespaengine/vespa-build-almalinux-8:latest'
+          - 'docker.io/vespaengine/vespa-dev-almalinux-8:latest'
+          - 'docker.io/vespaengine/vespa-build-almalinux-9:latest'
+          - 'docker.io/vespaengine/vespa-dev-almalinux-9:latest'
+
+    steps:
+    - name: Free disk space
+      uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be
+      with:
+        large-packages: false
+        docker-images: false
+        swap-storage: false
+
+    - name: Downloading Mend CLI
+      run: |
+        echo Downloading Mend CLI
+        curl https://downloads.mend.io/cli/linux_amd64/mend -o /usr/local/bin/mend && chmod +x /usr/local/bin/mend
+
+    - name: Mend CLI Scan
+      env:
+        MEND_EMAIL: ${{secrets.MEND_EMAIL}}
+        MEND_USER_KEY: ${{secrets.MEND_USER_KEY}}
+        MEND_URL: https://saas-eu.mend.io
+        IMAGE: ${{ matrix.image }}
+      run: |
+        echo "Scanning image ${IMAGE}"
+
+        # Project is everything after the last slash, excluding the tag
+        MEND_PROJECT=${IMAGE##*/}
+        MEND_PROJECT=${MEND_PROJECT%:*}
+        echo "Project: ${MEND_PROJECT}"
+
+        # Application is everything before the last slash (typically: docker.io/vespaengine)
+        MEND_APPLICATION=${IMAGE%/*}
+        echo "Application: ${MEND_APPLICATION}"
+
+        mend image "${IMAGE}" --force-reachability --scope "Vespa.ai//${MEND_APPLICATION}//${MEND_PROJECT}"
